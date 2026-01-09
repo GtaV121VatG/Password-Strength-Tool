@@ -3,27 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Password Checker</title>
+<title>Password Strength Checker</title>
 <style>
-body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; color: white; font-family: Arial, sans-serif; }
-#loader { display: flex; gap: 5px; }
-.dot { width: 15px; height: 15px; border-radius: 50%; background: blue; animation: bounce 0.6s infinite alternate; }
+body {
+  margin: 0;
+  height: 100vh;
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#loader {
+  display: flex;
+  gap: 8px;
+}
+.dot {
+  width: 14px;
+  height: 14px;
+  background: #1e90ff;
+  border-radius: 50%;
+  animation: bounce 0.6s infinite alternate;
+}
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
-#checker { display: none; flex-direction: column; gap: 10px; }
-input { padding: 8px; font-size: 16px; }
-button { padding: 8px; font-size: 16px; cursor: pointer; }
-#result { margin-top: 10px; font-weight: bold; }
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-18px); }
+}
+#checker {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+}
+input, button {
+  padding: 10px;
+  font-size: 16px;
+  background: #111;
+  color: white;
+  border: 1px solid #333;
+}
+button { cursor: pointer; }
+#result { font-weight: bold; }
+#time { font-size: 14px; }
 #breach { color: red; font-weight: bold; }
 </style>
 </head>
 <body>
+
 <div id="loader">
   <div class="dot"></div>
   <div class="dot"></div>
   <div class="dot"></div>
 </div>
+
 <div id="checker">
   <input type="password" id="password" placeholder="Enter password">
   <button onclick="checkPassword()">Check</button>
@@ -31,36 +66,73 @@ button { padding: 8px; font-size: 16px; cursor: pointer; }
   <div id="time"></div>
   <div id="breach"></div>
 </div>
+
 <script>
-setTimeout(() => { document.getElementById('loader').style.display = 'none'; document.getElementById('checker').style.display = 'flex'; }, 3000);
+setTimeout(() => {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("checker").style.display = "flex";
+}, 2500);
 
 function checkPassword() {
-  const pw = document.getElementById('password').value;
+  const pw = document.getElementById("password").value;
   let score = 0;
+
   if (pw.length >= 8) score++;
   if (/[A-Z]/.test(pw)) score++;
   if (/[a-z]/.test(pw)) score++;
   if (/\d/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
-  
-  let strength = '';
-  if (score <= 2) strength = 'Weak';
-  else if (score === 3 || score === 4) strength = 'Medium';
-  else strength = 'Strong';
-  
-  let crackTime;
-  if (score <= 2) crackTime = 'Seconds to Minutes';
-  else if (score === 3) crackTime = 'Hours to Days';
-  else if (score === 4) crackTime = 'Months to Years';
-  else crackTime = 'Decades to Centuries';
-  
-  document.getElementById('result').textContent = `Strength: ${strength}`;
-  document.getElementById('time').textContent = `Estimated time to crack: ${crackTime}`;
-  
-  fetch(`https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(pw)}`)
-    .then(res => { if (res.status === 200) document.getElementById('breach').textContent = '⚠️ This password has been in a data breach!'; else document.getElementById('breach').textContent = ''; })
-    .catch(() => { document.getElementById('breach').textContent = ''; });
+
+  let strength;
+  if (score <= 2) strength = "Weak";
+  else if (score <= 4) strength = "Medium";
+  else strength = "Strong";
+
+  let charset = 0;
+  if (/[a-z]/.test(pw)) charset += 26;
+  if (/[A-Z]/.test(pw)) charset += 26;
+  if (/\d/.test(pw)) charset += 10;
+  if (/[^A-Za-z0-9]/.test(pw)) charset += 32;
+
+  let crackTime = "Unknown";
+  const pwLower = pw.toLowerCase();
+  const commonWords = ["password","123456","qwerty","yellow","letmein","admin","welcome","monkey"];
+  const isCommon = commonWords.some(word => pwLower.includes(word));
+
+  if (isCommon || pw.length < 12) {
+    const guessesPerSecond = 1e4;
+    const keyspace = Math.pow(charset || 1, pw.length);
+    let seconds = keyspace / guessesPerSecond;
+
+    if (seconds < 60) crackTime = "<1 min";
+    else if (seconds < 3600) crackTime = (seconds/60).toFixed(1) + " min";
+    else if (seconds < 86400) crackTime = (seconds/3600).toFixed(1) + " h";
+    else if (seconds < 31536000) crackTime = (seconds/86400).toFixed(1) + " d";
+    else crackTime = (seconds/31536000).toFixed(1) + " y";
+  } else {
+    const guessesPerSecond = 1e10;
+    const keyspace = Math.pow(charset || 1, pw.length);
+    let seconds = keyspace / guessesPerSecond;
+
+    if (seconds < 1) crackTime = "<1 s";
+    else if (seconds < 60) crackTime = seconds.toFixed(1) + " s";
+    else if (seconds < 3600) crackTime = (seconds/60).toFixed(1) + " m";
+    else if (seconds < 86400) crackTime = (seconds/3600).toFixed(1) + " h";
+    else if (seconds < 31536000) crackTime = (seconds/86400).toFixed(1) + " d";
+    else crackTime = (seconds/31536000).toFixed(1) + " y";
+  }
+
+  document.getElementById("result").textContent = "Strength: " + strength;
+  document.getElementById("time").textContent = "Estimated time to crack: " + crackTime;
+
+  if (commonWords.some(w => pwLower.includes(w))) {
+    document.getElementById("breach").textContent = "⚠️ Potential data breach pattern detected";
+  } else {
+    document.getElementById("breach").textContent = "";
+  }
 }
 </script>
+
 </body>
 </html>
+
