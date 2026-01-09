@@ -51,29 +51,30 @@ html, body {
   box-shadow: 0 15px 40px rgba(0,0,0,0.5);
 }
 
-.shake {
-  animation: shake 0.4s;
-}
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  50% { transform: translateX(6px); }
-  75% { transform: translateX(-6px); }
-  100% { transform: translateX(0); }
-}
-
 h2 {
   text-align: center;
 }
 
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 input {
-  width: 70%;
+  flex: 1;
   padding: 10px;
   font-size: 16px;
 }
 
+.eye {
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+}
+
 button {
+  margin-top: 10px;
   padding: 10px 14px;
   font-size: 16px;
   background: #4caf50;
@@ -126,7 +127,11 @@ ul {
 <div class="container" id="card">
   <h2>Password Strength Analyzer and Breach Awareness Tool</h2>
 
-  <input type="password" id="password" placeholder="Enter password">
+  <div class="input-wrap">
+    <input type="password" id="password" placeholder="Enter password">
+    <span class="eye" onclick="togglePassword()">👁</span>
+  </div>
+
   <button onclick="checkPassword()">Check</button>
 
   <div class="bar">
@@ -182,26 +187,69 @@ function animateBackground() {
 
 animateBackground();
 
+function togglePassword() {
+  const input = document.getElementById("password");
+  input.type = input.type === "password" ? "text" : "password";
+}
+
 function checkPassword() {
   const pw = password.value;
   const fill = document.getElementById("fill");
   const list = document.getElementById("feedback");
   const strength = document.getElementById("strength");
   const overlay = document.getElementById("breachOverlay");
-  const card = document.getElementById("card");
   const breachText = document.getElementById("breachText");
 
   list.innerHTML = "";
   overlay.classList.remove("breach-active");
   breachText.style.display = "none";
 
-  let score = 0;
+  if (pw.length === 0) return;
 
-  if (pw.length >= 8) score++;
-  else list.innerHTML += "<li>Too short</li>";
+  let charset = 0;
+  if (/[a-z]/.test(pw)) charset += 26;
+  if (/[A-Z]/.test(pw)) charset += 26;
+  if (/[0-9]/.test(pw)) charset += 10;
+  if (/[^A-Za-z0-9]/.test(pw)) charset += 32;
 
-  if (/[A-Z]/.test(pw)) score++;
-  else list.innerHTML += "<li>No uppercase letters</li>";
+  if (charset === 0) charset = 26;
 
-  if (/[0-9]/.test(pw)) score++;
-  else list.innerHTML += "<li
+  const guessesPerSecond = 1e10;
+  const keyspace = Math.pow(charset, pw.length);
+  const seconds = keyspace / guessesPerSecond;
+
+  function formatTime(sec) {
+    if (sec < 1) return "<1s";
+    if (sec < 60) return sec.toFixed(1) + "s";
+    if (sec < 3600) return (sec / 60).toFixed(1) + "m";
+    if (sec < 86400) return (sec / 3600).toFixed(1) + "h";
+    if (sec < 31536000) return (sec / 86400).toFixed(1) + "d";
+    return (sec / 31536000).toFixed(1) + "y";
+  }
+
+  const crackTime = formatTime(seconds);
+
+  if (seconds < 1e6) {
+    fill.style.width = "25%";
+    fill.style.background = "red";
+    strength.textContent = "Strength: Weak (" + crackTime + ")";
+    overlay.classList.add("breach-active");
+    breachText.style.display = "block";
+  } else if (seconds < 1e12) {
+    fill.style.width = "60%";
+    fill.style.background = "orange";
+    strength.textContent = "Strength: Medium (" + crackTime + ")";
+  } else {
+    fill.style.width = "100%";
+    fill.style.background = "green";
+    strength.textContent = "Strength: Strong (" + crackTime + ")";
+  }
+
+  if (!/[A-Z]/.test(pw)) list.innerHTML += "<li>No uppercase letters</li>";
+  if (!/[0-9]/.test(pw)) list.innerHTML += "<li>No digits</li>";
+  if (!/[^A-Za-z0-9]/.test(pw)) list.innerHTML += "<li>No special characters</li>";
+}
+</script>
+
+</body>
+</html>
