@@ -17,10 +17,7 @@ html, body {
 
 #background {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 0;
 }
 
@@ -199,56 +196,12 @@ function checkPassword() {
   breachText.style.display = "none";
 
   let score = 0;
-  let charset = 0;
 
   if (pw.length >= 8) score++;
   else list.innerHTML += "<li>Too short</li>";
 
-  if (/[A-Z]/.test(pw)) { score++; charset += 26; }
+  if (/[A-Z]/.test(pw)) score++;
   else list.innerHTML += "<li>No uppercase letters</li>";
 
-  if (/[a-z]/.test(pw)) charset += 26;
-
-  if (/[0-9]/.test(pw)) { score++; charset += 10; }
-  else list.innerHTML += "<li>No digits</li>";
-
-  if (/[^A-Za-z0-9]/.test(pw)) { score++; charset += 32; }
-  else list.innerHTML += "<li>No special characters</li>";
-
-  const percent = (score / 4) * 100;
-  fill.style.width = percent + "%";
-
-  const guessesPerSecond = 1e10;
-  const keyspace = Math.pow(charset || 1, pw.length);
-  let seconds = keyspace / guessesPerSecond;
-
-  function formatTime(sec) {
-    if (sec < 1) return "<1s";
-    if (sec < 60) return sec.toFixed(1) + "s";
-    if (sec < 3600) return (sec / 60).toFixed(1) + "m";
-    if (sec < 86400) return (sec / 3600).toFixed(1) + "h";
-    if (sec < 31536000) return (sec / 86400).toFixed(1) + "d";
-    return (sec / 31536000).toFixed(1) + "y";
-  }
-
-  const crackTime = formatTime(seconds);
-
-  if (score <= 1) {
-    fill.style.background = "red";
-    strength.textContent = "Strength: Weak (" + crackTime + ")";
-    overlay.classList.add("breach-active");
-    breachText.style.display = "block";
-    card.classList.add("shake");
-    setTimeout(() => card.classList.remove("shake"), 400);
-  } else if (score === 2) {
-    fill.style.background = "orange";
-    strength.textContent = "Strength: Medium (" + crackTime + ")";
-  } else {
-    fill.style.background = "green";
-    strength.textContent = "Strength: Strong (" + crackTime + ")";
-  }
-}
-</script>
-
-</body>
-</html>
+  if (/[0-9]/.test(pw)) score++;
+  else list.innerHTML += "<li
