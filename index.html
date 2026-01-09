@@ -15,7 +15,6 @@ html, body {
   overflow: hidden;
 }
 
-/* Background animation */
 #background {
   position: fixed;
   top: 0;
@@ -25,7 +24,6 @@ html, body {
   z-index: 0;
 }
 
-/* Breach overlay */
 #breachOverlay {
   position: fixed;
   inset: 0;
@@ -45,7 +43,6 @@ html, body {
   100% { opacity: 0.1; }
 }
 
-/* Main card */
 .container {
   position: relative;
   z-index: 2;
@@ -121,10 +118,6 @@ ul {
 @keyframes blink {
   50% { opacity: 0; }
 }
-
-#details {
-  margin-top: 10px;
-}
 </style>
 </head>
 
@@ -145,12 +138,10 @@ ul {
 
   <p id="strength">Strength:</p>
   <p class="breach-text" id="breachText">⚠ POTENTIAL BREACH RISK DETECTED ⚠</p>
-  <p id="details"></p>
   <ul id="feedback"></ul>
 </div>
 
 <script>
-/* ===== BACKGROUND ANIMATION ===== */
 const canvas = document.getElementById("background");
 const ctx = canvas.getContext("2d");
 
@@ -194,86 +185,8 @@ function animateBackground() {
 
 animateBackground();
 
-/* ===== PASSWORD CHECK ===== */
 function checkPassword() {
   const pw = password.value;
   const fill = document.getElementById("fill");
   const list = document.getElementById("feedback");
-  const strength = document.getElementById("strength");
-  const overlay = document.getElementById("breachOverlay");
-  const card = document.getElementById("card");
-  const breachText = document.getElementById("breachText");
-  const details = document.getElementById("details");
-
-  list.innerHTML = "";
-  overlay.classList.remove("breach-active");
-  breachText.style.display = "none";
-  details.innerHTML = "";
-
-  let score = 0;
-  let charset = 0;
-
-  // Check character types
-  if (pw.length >= 8) score++;
-  else list.innerHTML += "<li>Password is shorter than 8 characters</li>";
-
-  if (/[A-Z]/.test(pw)) { score++; charset += 26; }
-  else list.innerHTML += "<li>Add uppercase letters</li>";
-
-  if (/[a-z]/.test(pw)) charset += 26;
-
-  if (/[0-9]/.test(pw)) { score++; charset += 10; }
-  else list.innerHTML += "<li>Add numbers</li>";
-
-  if (/[^A-Za-z0-9]/.test(pw)) { score++; charset += 32; }
-  else list.innerHTML += "<li>Add special characters</li>";
-
-  const percent = (score / 4) * 100;
-  fill.style.width = percent + "%";
-
-  // Realistic crack time calculation
-  const guessesPerSecond = 1e10; // 10 billion guesses/sec
-  const keyspace = Math.pow(charset || 1, pw.length);
-  let seconds = keyspace / guessesPerSecond;
-
-  function formatTime(sec) {
-    if (sec < 1) return "Less than 1 second";
-    if (sec < 60) return `${sec.toFixed(1)} seconds`;
-    if (sec < 3600) return `${(sec / 60).toFixed(1)} minutes`;
-    if (sec < 86400) return `${(sec / 3600).toFixed(1)} hours`;
-    if (sec < 31536000) return `${(sec / 86400).toFixed(1)} days`;
-    if (sec < 3153600000) return `${(sec / 31536000).toFixed(1)} years`;
-    return "Thousands of years or more";
-  }
-
-  const crackTime = formatTime(seconds);
-  const entropy = pw.length * Math.log2(charset || 1);
-
-  // Display details
-  details.innerHTML = `
-    <strong>Length:</strong> ${pw.length} characters<br>
-    <strong>Character set size:</strong> ${charset}<br>
-    <strong>Entropy:</strong> ${entropy.toFixed(1)} bits<br>
-    <strong>Estimated time to crack:</strong> ${crackTime}
-  `;
-
-  // Strength and breach logic
-  if (score <= 1) {
-    fill.style.background = "red";
-    strength.textContent = "Strength: Weak";
-    overlay.classList.add("breach-active");
-    breachText.style.display = "block";
-    card.classList.add("shake");
-    setTimeout(() => card.classList.remove("shake"), 400);
-  } else if (score === 2) {
-    fill.style.background = "orange";
-    strength.textContent = "Strength: Medium";
-  } else {
-    fill.style.background = "green";
-    strength.textContent = "Strength: Strong";
-  }
-}
-</script>
-
-</body>
-</html>
+  const strength = document.getElement
