@@ -206,13 +206,14 @@ function checkPassword() {
 
   if (pw.length === 0) return;
 
+  // Calculate charset based on present character types
   let charset = 0;
   if (/[a-z]/.test(pw)) charset += 26;
   if (/[A-Z]/.test(pw)) charset += 26;
   if (/[0-9]/.test(pw)) charset += 10;
   if (/[^A-Za-z0-9]/.test(pw)) charset += 32;
 
-  if (charset === 0) charset = 26;
+  if (charset === 0) charset = 26; // fallback
 
   const guessesPerSecond = 1e10;
   const keyspace = Math.pow(charset, pw.length);
@@ -229,13 +230,14 @@ function checkPassword() {
 
   const crackTime = formatTime(seconds);
 
-  if (seconds < 1e6) {
+  // BREACH LOGIC: only show if password can be cracked in <1 minute
+  if (seconds < 60) {
     fill.style.width = "25%";
     fill.style.background = "red";
     strength.textContent = "Strength: Weak (" + crackTime + ")";
     overlay.classList.add("breach-active");
     breachText.style.display = "block";
-  } else if (seconds < 1e12) {
+  } else if (seconds < 1e6) {
     fill.style.width = "60%";
     fill.style.background = "orange";
     strength.textContent = "Strength: Medium (" + crackTime + ")";
@@ -245,6 +247,7 @@ function checkPassword() {
     strength.textContent = "Strength: Strong (" + crackTime + ")";
   }
 
+  // Feedback
   if (!/[A-Z]/.test(pw)) list.innerHTML += "<li>No uppercase letters</li>";
   if (!/[0-9]/.test(pw)) list.innerHTML += "<li>No digits</li>";
   if (!/[^A-Za-z0-9]/.test(pw)) list.innerHTML += "<li>No special characters</li>";
