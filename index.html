@@ -2,137 +2,253 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Password Strength Checker</title>
+<title>Password Strength Analyzer</title>
+
 <style>
-body {
+html, body {
   margin: 0;
-  height: 100vh;
-  background: black;
-  color: white;
+  padding: 0;
+  width: 100%;
+  height: 100%;
   font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: black;
+  overflow: hidden;
 }
-#loader {
-  display: flex;
-  gap: 8px;
+
+#background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
 }
-.dot {
-  width: 14px;
-  height: 14px;
-  background: #1e90ff;
-  border-radius: 50%;
-  animation: bounce 0.6s infinite alternate;
+
+#breachOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
 }
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-18px); }
+
+.breach-active {
+  animation: pulse 1s infinite;
 }
-#checker {
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  width: 260px;
+
+@keyframes pulse {
+  0% { opacity: 0.1; }
+  50% { opacity: 0.45; }
+  100% { opacity: 0.1; }
 }
-input, button {
+
+.container {
+  position: relative;
+  z-index: 2;
+  width: 420px;
+  margin: 120px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+
+.shake {
+  animation: shake 0.4s;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-6px); }
+  100% { transform: translateX(0); }
+}
+
+h2 {
+  text-align: center;
+}
+
+input {
+  width: 70%;
   padding: 10px;
   font-size: 16px;
-  background: #111;
-  color: white;
-  border: 1px solid #333;
 }
-button { cursor: pointer; }
-#result { font-weight: bold; }
-#time { font-size: 14px; }
-#breach { color: red; font-weight: bold; }
+
+button {
+  padding: 10px 14px;
+  font-size: 16px;
+  background: #4caf50;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.bar {
+  width: 100%;
+  height: 14px;
+  background: #eee;
+  border-radius: 10px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 0%;
+  background: red;
+  transition: width 0.4s, background 0.4s;
+}
+
+ul {
+  padding-left: 18px;
+  color: red;
+}
+
+.breach-text {
+  color: darkred;
+  font-weight: bold;
+  margin-top: 10px;
+  display: none;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
 </style>
 </head>
+
 <body>
 
-<div id="loader">
-  <div class="dot"></div>
-  <div class="dot"></div>
-  <div class="dot"></div>
-</div>
+<canvas id="background"></canvas>
+<div id="breachOverlay"></div>
 
-<div id="checker">
+<div class="container" id="card">
+  <h2>Password Strength Analyzer and Breach Awareness Tool</h2>
+
   <input type="password" id="password" placeholder="Enter password">
   <button onclick="checkPassword()">Check</button>
-  <div id="result"></div>
-  <div id="time"></div>
-  <div id="breach"></div>
+
+  <div class="bar">
+    <div class="fill" id="fill"></div>
+  </div>
+
+  <p id="strength">Strength:</p>
+  <p class="breach-text" id="breachText">⚠ POTENTIAL BREACH RISK DETECTED ⚠</p>
+  <ul id="feedback"></ul>
 </div>
 
 <script>
-setTimeout(() => {
-  document.getElementById("loader").style.display = "none";
-  document.getElementById("checker").style.display = "flex";
-}, 2500);
+const canvas = document.getElementById("background");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let dots = [];
+for (let i = 0; i < 120; i++) {
+  dots.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    dx: (Math.random() - 0.5) * 1.2,
+    dy: (Math.random() - 0.5) * 1.2,
+    r: Math.random() * 2 + 1
+  });
+}
+
+function animateBackground() {
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  dots.forEach(d => {
+    d.x += d.dx;
+    d.y += d.dy;
+
+    if (d.x < 0 || d.x > canvas.width) d.dx *= -1;
+    if (d.y < 0 || d.y > canvas.height) d.dy *= -1;
+
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fillStyle = "#00aaff";
+    ctx.fill();
+  });
+
+  requestAnimationFrame(animateBackground);
+}
+
+animateBackground();
 
 function checkPassword() {
-  const pw = document.getElementById("password").value;
+  const pw = password.value;
+  const fill = document.getElementById("fill");
+  const list = document.getElementById("feedback");
+  const strength = document.getElementById("strength");
+  const overlay = document.getElementById("breachOverlay");
+  const card = document.getElementById("card");
+  const breachText = document.getElementById("breachText");
+
+  list.innerHTML = "";
+  overlay.classList.remove("breach-active");
+  breachText.style.display = "none";
+
   let score = 0;
+  let charset = 0;
 
   if (pw.length >= 8) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[a-z]/.test(pw)) score++;
-  if (/\d/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  else list.innerHTML += "<li>Too short</li>";
 
-  let strength;
-  if (score <= 2) strength = "Weak";
-  else if (score <= 4) strength = "Medium";
-  else strength = "Strong";
+  if (/[A-Z]/.test(pw)) { score++; charset += 26; }
+  else list.innerHTML += "<li>No uppercase letters</li>";
 
-  let charset = 0;
   if (/[a-z]/.test(pw)) charset += 26;
-  if (/[A-Z]/.test(pw)) charset += 26;
-  if (/\d/.test(pw)) charset += 10;
-  if (/[^A-Za-z0-9]/.test(pw)) charset += 32;
 
-  let crackTime = "Unknown";
-  const pwLower = pw.toLowerCase();
-  const commonWords = ["password","123456","qwerty","yellow","letmein","admin","welcome","monkey"];
-  const isCommon = commonWords.some(word => pwLower.includes(word));
+  if (/[0-9]/.test(pw)) { score++; charset += 10; }
+  else list.innerHTML += "<li>No digits</li>";
 
-  if (isCommon || pw.length < 12) {
-    const guessesPerSecond = 1e4;
-    const keyspace = Math.pow(charset || 1, pw.length);
-    let seconds = keyspace / guessesPerSecond;
+  if (/[^A-Za-z0-9]/.test(pw)) { score++; charset += 32; }
+  else list.innerHTML += "<li>No special characters</li>";
 
-    if (seconds < 60) crackTime = "<1 min";
-    else if (seconds < 3600) crackTime = (seconds/60).toFixed(1) + " min";
-    else if (seconds < 86400) crackTime = (seconds/3600).toFixed(1) + " h";
-    else if (seconds < 31536000) crackTime = (seconds/86400).toFixed(1) + " d";
-    else crackTime = (seconds/31536000).toFixed(1) + " y";
-  } else {
-    const guessesPerSecond = 1e10;
-    const keyspace = Math.pow(charset || 1, pw.length);
-    let seconds = keyspace / guessesPerSecond;
+  const percent = (score / 4) * 100;
+  fill.style.width = percent + "%";
 
-    if (seconds < 1) crackTime = "<1 s";
-    else if (seconds < 60) crackTime = seconds.toFixed(1) + " s";
-    else if (seconds < 3600) crackTime = (seconds/60).toFixed(1) + " m";
-    else if (seconds < 86400) crackTime = (seconds/3600).toFixed(1) + " h";
-    else if (seconds < 31536000) crackTime = (seconds/86400).toFixed(1) + " d";
-    else crackTime = (seconds/31536000).toFixed(1) + " y";
+  const guessesPerSecond = 1e10;
+  const keyspace = Math.pow(charset || 1, pw.length);
+  let seconds = keyspace / guessesPerSecond;
+
+  function formatTime(sec) {
+    if (sec < 1) return "<1s";
+    if (sec < 60) return sec.toFixed(1) + "s";
+    if (sec < 3600) return (sec / 60).toFixed(1) + "m";
+    if (sec < 86400) return (sec / 3600).toFixed(1) + "h";
+    if (sec < 31536000) return (sec / 86400).toFixed(1) + "d";
+    return (sec / 31536000).toFixed(1) + "y";
   }
 
-  document.getElementById("result").textContent = "Strength: " + strength;
-  document.getElementById("time").textContent = "Estimated time to crack: " + crackTime;
+  const crackTime = formatTime(seconds);
 
-  if (commonWords.some(w => pwLower.includes(w))) {
-    document.getElementById("breach").textContent = "⚠️ Potential data breach pattern detected";
+  if (score <= 1) {
+    fill.style.background = "red";
+    strength.textContent = "Strength: Weak (" + crackTime + ")";
+    overlay.classList.add("breach-active");
+    breachText.style.display = "block";
+    card.classList.add("shake");
+    setTimeout(() => card.classList.remove("shake"), 400);
+  } else if (score === 2) {
+    fill.style.background = "orange";
+    strength.textContent = "Strength: Medium (" + crackTime + ")";
   } else {
-    document.getElementById("breach").textContent = "";
+    fill.style.background = "green";
+    strength.textContent = "Strength: Strong (" + crackTime + ")";
   }
 }
 </script>
 
 </body>
 </html>
-
