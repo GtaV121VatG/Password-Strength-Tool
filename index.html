@@ -5,8 +5,11 @@
   <title>Password Strength Analyzer</title>
 
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       font-family: Arial, sans-serif;
       background: #f4f6f8;
       overflow: hidden;
@@ -16,19 +19,38 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .breach-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 0, 0, 0.25);
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .breach-active {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 0.1; }
     }
 
     .container {
+      position: relative;
+      z-index: 2;
       width: 420px;
       margin: 120px auto;
       background: white;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-      transition: transform 0.2s;
     }
 
     .shake {
@@ -45,185 +67,9 @@
 
     h2 {
       text-align: center;
-      margin-bottom: 20px;
     }
 
     input {
       width: 70%;
       padding: 10px;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 10px 14px;
-      font-size: 16px;
-      background: #4caf50;
-      border: none;
-      color: white;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .bar {
-      width: 100%;
-      height: 14px;
-      background: #eee;
-      border-radius: 10px;
-      margin-top: 20px;
-      overflow: hidden;
-    }
-
-    .fill {
-      height: 100%;
-      width: 0%;
-      background: red;
-      transition: width 0.4s, background 0.4s;
-    }
-
-    ul {
-      padding-left: 18px;
-      color: red;
-    }
-
-    .breach-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(255, 0, 0, 0.25);
-      opacity: 0;
-      pointer-events: none;
-      animation: none;
-    }
-
-    .breach-active {
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 0.1; }
-    }
-
-    .breach-text {
-      color: darkred;
-      font-weight: bold;
-      margin-top: 10px;
-      display: none;
-      animation: blink 1s infinite;
-    }
-
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-  </style>
-</head>
-
-<body>
-
-  <canvas id="bg"></canvas>
-  <div class="breach-overlay" id="overlay"></div>
-
-  <div class="container" id="card">
-    <h2>Password Strength Analyzer and Breach Awareness Tool</h2>
-
-    <input type="password" id="password" placeholder="Enter password">
-    <button onclick="check()">Check</button>
-
-    <div class="bar">
-      <div class="fill" id="fill"></div>
-    </div>
-
-    <p id="strength">Strength:</p>
-    <p class="breach-text" id="breachText">⚠ POTENTIAL BREACH RISK DETECTED ⚠</p>
-
-    <ul id="feedback"></ul>
-  </div>
-
-  <script>
-    const canvas = document.getElementById("bg");
-    const ctx = canvas.getContext("2d");
-
-    let particles = [];
-    const count = 80;
-
-    function resize() {
-      canvas.width = innerWidth;
-      canvas.height = innerHeight;
-    }
-    addEventListener("resize", resize);
-    resize();
-
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 1,
-        dx: (Math.random() - 0.5) * 0.6,
-        dy: (Math.random() - 0.5) * 0.6
-      });
-    }
-
-    function animate() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      particles.forEach(p => {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(0,150,255,0.35)";
-        ctx.fill();
-      });
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    function check() {
-      const pw = document.getElementById("password").value;
-      const fill = document.getElementById("fill");
-      const list = document.getElementById("feedback");
-      const strength = document.getElementById("strength");
-      const overlay = document.getElementById("overlay");
-      const card = document.getElementById("card");
-      const breachText = document.getElementById("breachText");
-
-      list.innerHTML = "";
-      overlay.classList.remove("breach-active");
-      breachText.style.display = "none";
-
-      let score = 0;
-      if (pw.length >= 8) score++;
-      else list.innerHTML += "<li>Too short</li>";
-
-      if (/[A-Z]/.test(pw)) score++;
-      else list.innerHTML += "<li>No uppercase letters</li>";
-
-      if (/[0-9]/.test(pw)) score++;
-      else list.innerHTML += "<li>No digits</li>";
-
-      if (/[^A-Za-z0-9]/.test(pw)) score++;
-      else list.innerHTML += "<li>No special characters</li>";
-
-      const percent = (score / 4) * 100;
-      fill.style.width = percent + "%";
-
-      if (score <= 1) {
-        fill.style.background = "red";
-        strength.textContent = "Strength: Weak";
-        overlay.classList.add("breach-active");
-        breachText.style.display = "block";
-        card.classList.add("shake");
-        setTimeout(() => card.classList.remove("shake"), 400);
-      } else if (score === 2) {
-        fill.style.background = "orange";
-        strength.textContent = "Strength: Medium";
-      } else {
-        fill.style.background = "green";
-        strength.textContent = "Strength: Strong";
-      }
-    }
-  </script>
-
-</body>
-</html>
+      font-s
