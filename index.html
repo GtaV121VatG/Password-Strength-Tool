@@ -2,191 +2,65 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Password Strength Analyzer</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Checker</title>
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  font-family: Arial, sans-serif;
-  background: black;
-  overflow: hidden;
-}
-
-#background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-#breachOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 0, 0, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.breach-active {
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.1; }
-  50% { opacity: 0.45; }
-  100% { opacity: 0.1; }
-}
-
-.container {
-  position: relative;
-  z-index: 2;
-  width: 420px;
-  margin: 120px auto;
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-}
-
-.shake {
-  animation: shake 0.4s;
-}
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  50% { transform: translateX(6px); }
-  75% { transform: translateX(-6px); }
-  100% { transform: translateX(0); }
-}
-
-h2 {
-  text-align: center;
-}
-
-input {
-  width: 70%;
-  padding: 10px;
-  font-size: 16px;
-}
-
-button {
-  padding: 10px 14px;
-  font-size: 16px;
-  background: #4caf50;
-  border: none;
-  color: white;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.bar {
-  width: 100%;
-  height: 14px;
-  background: #eee;
-  border-radius: 10px;
-  margin-top: 20px;
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  width: 0%;
-  background: red;
-  transition: width 0.4s, background 0.4s;
-}
-
-ul {
-  padding-left: 18px;
-  color: red;
-}
-
-.breach-text {
-  color: darkred;
-  font-weight: bold;
-  margin-top: 10px;
-  display: none;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
-}
+body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; color: white; font-family: Arial, sans-serif; }
+#loader { display: flex; gap: 5px; }
+.dot { width: 15px; height: 15px; border-radius: 50%; background: blue; animation: bounce 0.6s infinite alternate; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+#checker { display: none; flex-direction: column; gap: 10px; }
+input { padding: 8px; font-size: 16px; }
+button { padding: 8px; font-size: 16px; cursor: pointer; }
+#result { margin-top: 10px; font-weight: bold; }
+#breach { color: red; font-weight: bold; }
 </style>
 </head>
-
 <body>
-
-<canvas id="background"></canvas>
-<div id="breachOverlay"></div>
-
-<div class="container" id="card">
-  <h2>Password Strength Analyzer and Breach Awareness Tool</h2>
-
+<div id="loader">
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+<div id="checker">
   <input type="password" id="password" placeholder="Enter password">
   <button onclick="checkPassword()">Check</button>
-
-  <div class="bar">
-    <div class="fill" id="fill"></div>
-  </div>
-
-  <p id="strength">Strength:</p>
-  <p class="breach-text" id="breachText">⚠ POTENTIAL BREACH RISK DETECTED ⚠</p>
-  <ul id="feedback"></ul>
+  <div id="result"></div>
+  <div id="time"></div>
+  <div id="breach"></div>
 </div>
-
 <script>
-const canvas = document.getElementById("background");
-const ctx = canvas.getContext("2d");
-
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
-
-let dots = [];
-for (let i = 0; i < 120; i++) {
-  dots.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    dx: (Math.random() - 0.5) * 1.2,
-    dy: (Math.random() - 0.5) * 1.2,
-    r: Math.random() * 2 + 1
-  });
-}
-
-function animateBackground() {
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  dots.forEach(d => {
-    d.x += d.dx;
-    d.y += d.dy;
-
-    if (d.x < 0 || d.x > canvas.width) d.dx *= -1;
-    if (d.y < 0 || d.y > canvas.height) d.dy *= -1;
-
-    ctx.beginPath();
-    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-    ctx.fillStyle = "#00aaff";
-    ctx.fill();
-  });
-
-  requestAnimationFrame(animateBackground);
-}
-
-animateBackground();
+setTimeout(() => { document.getElementById('loader').style.display = 'none'; document.getElementById('checker').style.display = 'flex'; }, 3000);
 
 function checkPassword() {
-  const pw = password.value;
-  const fill = document.getElementById("fill");
-  const list = document.getElementById("feedback");
-  const strength = document.getElement
+  const pw = document.getElementById('password').value;
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  
+  let strength = '';
+  if (score <= 2) strength = 'Weak';
+  else if (score === 3 || score === 4) strength = 'Medium';
+  else strength = 'Strong';
+  
+  let crackTime;
+  if (score <= 2) crackTime = 'Seconds to Minutes';
+  else if (score === 3) crackTime = 'Hours to Days';
+  else if (score === 4) crackTime = 'Months to Years';
+  else crackTime = 'Decades to Centuries';
+  
+  document.getElementById('result').textContent = `Strength: ${strength}`;
+  document.getElementById('time').textContent = `Estimated time to crack: ${crackTime}`;
+  
+  fetch(`https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(pw)}`)
+    .then(res => { if (res.status === 200) document.getElementById('breach').textContent = '⚠️ This password has been in a data breach!'; else document.getElementById('breach').textContent = ''; })
+    .catch(() => { document.getElementById('breach').textContent = ''; });
+}
+</script>
+</body>
+</html>
